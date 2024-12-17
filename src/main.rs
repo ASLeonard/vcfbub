@@ -1,6 +1,4 @@
-use clap::{App, Arg};
-//use std::String;
-//use fnv::{FnvHashMap, FnvHashSet};
+use clap::{Command, Arg, ArgAction};
 use std::collections::HashSet;
 use rust_htslib::bcf::{Reader, Writer, Read, Record, Header, Format};
 
@@ -76,8 +74,8 @@ fn get_ref_allele_length(vcf_record: &Record) -> usize {
 }
 
 fn main() {
-    let matches = App::new("vcfbub")
-        .version("0.1.0")
+    let matches = Command::new("vcfbub")
+        .version("0.1.1")
         .author("Erik Garrison <erik.garrison@gmail.com>")
         .about(concat!(
             "\nFilter vg deconstruct output using variant nesting information.\n",
@@ -85,65 +83,65 @@ fn main() {
             "Nesting information must be given in LV (level) and PS (parent snarl) tags."
         ))
         .arg(
-            Arg::with_name("input")
-                .short("i")
+            Arg::new("input")
+                .short('i')
                 .long("input")
                 .value_name("FILE")
                 .help("Filter this input VCF file.")
                 .required(true)
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
-            Arg::with_name("max-level")
-                .short("l")
+            Arg::new("max-level")
+                .short('l')
                 .long("max-level")
                 .value_name("LEVEL")
                 .help("Filter sites with LV > LEVEL.")
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
-            Arg::with_name("max-allele-length")
-                .short("a")
+            Arg::new("max-allele-length")
+                .short('a')
                 .long("max-allele-length")
                 .value_name("LENGTH")
                 .help("Filter sites whose max allele length is greater than LENGTH.")
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
-            Arg::with_name("max-ref-length")
-                .short("r")
+            Arg::new("max-ref-length")
+                .short('r')
                 .long("max-ref-length")
                 .value_name("LENGTH")
                 .help("Filter sites whose reference allele is longer than LENGTH.")
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
-            Arg::with_name("debug")
-                .short("d")
+            Arg::new("debug")
+                .short('d')
                 .long("debug")
                 .help("Print debugging information about which sites are removed.")
-                .takes_value(false),
+                .action(ArgAction::SetTrue),
         )
         .get_matches();
 
-    let infile = matches.value_of("input").unwrap();
+    let infile = matches.get_one::<String>("input").unwrap();
 
-    let max_level = match matches.value_of("max-level") {
+    let max_level = match matches.get_one::<String>("max-level") {
         Some(l) => l.parse::<i32>().unwrap(),
         None => i32::MAX,
     };
 
-    let max_allele_length = match matches.value_of("max-allele-length") {
+    let max_allele_length = match matches.get_one::<String>("max-allele-length") {
         Some(l) => l.parse::<usize>().unwrap(),
         None => usize::MAX,
     };
 
-    let max_ref_length = match matches.value_of("max-ref-length") {
+    let max_ref_length = match matches.get_one::<String>("max-ref-length") {
         Some(l) => l.parse::<usize>().unwrap(),
         None => usize::MAX,
     };
 
-    let print_debug = matches.is_present("debug");
+    let print_debug = matches.get_one::<bool>("debug").is_some();
 
     // make a pass to check the levels
     // and decide what to filter
